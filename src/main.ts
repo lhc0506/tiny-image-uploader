@@ -1,24 +1,22 @@
 import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+import { ImageProcessor } from './ImageProcessor';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+const imageProcessor = new ImageProcessor();
+const selectButton = document.getElementById('selectImage') as HTMLButtonElement;
+const previewDiv = document.getElementById('imagePreview') as HTMLDivElement;
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+selectButton.addEventListener('click', async () => {
+  try {
+    const file = await imageProcessor.selectImage();
+
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.style.maxWidth = '300px';
+    previewDiv.innerHTML = '';
+    previewDiv.appendChild(img);
+  } catch (error) {
+    console.error('Error selecting image:', error);
+  }
+});
+
+
