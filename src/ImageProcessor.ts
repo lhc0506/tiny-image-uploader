@@ -1,9 +1,20 @@
 export class ImageProcessor {
   private selectedImage: HTMLImageElement | null = null;
+  private maxFileSize: number | null = null;
+
+  constructor(maxFileSize?: number) {
+    if (maxFileSize) {
+      this.maxFileSize = maxFileSize;
+    }
+  }
 
   public async selectImage(): Promise<void> {
     const file = await this._selectImageFile();
-    this.selectedImage = await this.loadImage(file);
+    if (this.isValidFileSize(file)) {
+      this.selectedImage = await this.loadImage(file);
+    } else {
+      throw new Error('File size exceeds the maximum limit');
+    }
   }
 
   public getImagePreview(): string | null {
@@ -33,5 +44,9 @@ export class ImageProcessor {
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  private isValidFileSize(file: File): boolean {
+    return this.maxFileSize ? file.size <= this.maxFileSize : true;
   }
 }

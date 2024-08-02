@@ -1,7 +1,7 @@
 import './style.css';
 import { ImageProcessor } from './ImageProcessor';
 
-const imageProcessor = new ImageProcessor();
+const imageProcessor = new ImageProcessor(1);
 const selectButton = document.getElementById('selectImage') as HTMLButtonElement;
 const previewImg = document.getElementById('imagePreview') as HTMLImageElement;
 
