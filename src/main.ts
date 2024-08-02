@@ -3,17 +3,19 @@ import { ImageProcessor } from './ImageProcessor';
 
 const imageProcessor = new ImageProcessor();
 const selectButton = document.getElementById('selectImage') as HTMLButtonElement;
-const previewDiv = document.getElementById('imagePreview') as HTMLDivElement;
+const previewImg = document.getElementById('imagePreview') as HTMLImageElement;
 
 selectButton.addEventListener('click', async () => {
   try {
-    const file = await imageProcessor.selectImage();
+    await imageProcessor.selectImage();
+    const previewSrc =  imageProcessor.getImagePreview();
 
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    img.style.maxWidth = '300px';
-    previewDiv.innerHTML = '';
-    previewDiv.appendChild(img);
+    if (!previewSrc) {
+      return;
+    }
+
+    previewImg.src = previewSrc;
+
   } catch (error) {
     console.error('Error selecting image:', error);
   }
