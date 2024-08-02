@@ -1,11 +1,16 @@
 export class ImageProcessor {
   private selectedImage: HTMLImageElement | null = null;
   private maxFileSize: number | null = null;
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D | null = null;
 
   constructor(maxFileSize?: number) {
     if (maxFileSize) {
       this.maxFileSize = maxFileSize;
     }
+
+    this.canvas = document.createElement('canvas');
+    this.ctx = this.canvas.getContext('2d');
   }
 
   public async selectImage(): Promise<void> {
@@ -19,6 +24,17 @@ export class ImageProcessor {
 
   public getImagePreview(): string | null {
     return this.selectedImage?.src || null;
+  }
+
+  public resizeImage(width: number, height: number): string | null {
+    if (!this.selectedImage) {
+      return null;
+    }
+
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.ctx?.drawImage(this.selectedImage, 0, 0, width, height);
+    return this.canvas.toDataURL('image/jpeg');
   }
 
   private _selectImageFile(): Promise<File> {
