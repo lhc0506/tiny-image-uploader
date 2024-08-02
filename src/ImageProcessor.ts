@@ -10,7 +10,7 @@ export class ImageProcessor {
     return this.selectedImage?.src || null;
   }
 
-   private _selectImageFile(): Promise<File> {
+  private _selectImageFile(): Promise<File> {
     return new Promise((resolve) => {
       const input = document.createElement('input');
       input.type = 'file';

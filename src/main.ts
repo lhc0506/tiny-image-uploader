@@ -1,4 +1,4 @@
-import './style.css'
+import './style.css';
 import { ImageProcessor } from './ImageProcessor';
 
 const imageProcessor = new ImageProcessor();
@@ -8,17 +8,14 @@ const previewImg = document.getElementById('imagePreview') as HTMLImageElement;
 selectButton.addEventListener('click', async () => {
   try {
     await imageProcessor.selectImage();
-    const previewSrc =  imageProcessor.getImagePreview();
+    const previewSrc = imageProcessor.getImagePreview();
 
     if (!previewSrc) {
       return;
     }
 
     previewImg.src = previewSrc;
-
   } catch (error) {
     console.error('Error selecting image:', error);
   }
 });
-
-
