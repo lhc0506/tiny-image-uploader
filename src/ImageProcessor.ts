@@ -12,6 +12,7 @@ interface ResizeOptions {
 
 export class ImageProcessor {
   private selectedImage: HTMLImageElement | null = null;
+  private _isLoading = false;
   private maxFileSize: number | null = null;
   private maxWidth: number | null = null;
   private maxHeight: number | null = null;
@@ -34,20 +35,30 @@ export class ImageProcessor {
   }
 
   public async selectImage(): Promise<void> {
-    const file = await this._selectImageFile();
-    if (this.isValidFileSize(file)) {
-      this.selectedImage = await this.loadImage(file);
-    } else {
-      throw new Error('File size exceeds the maximum limit');
+    try {
+      this._isLoading = true;
+      const file = await this._selectImageFile();
+      if (this.isValidFileSize(file)) {
+        this.selectedImage = await this.loadImage(file);
+      } else {
+        throw new Error('File size exceeds the maximum limit');
+      }
+    } finally {
+      this._isLoading = false;
     }
   }
 
-  public getImagePreview(): string | null {
+  public getImagePreview() {
     return this.selectedImage?.src || null;
   }
 
-  public resizeImage({ width, height, maintainAspectRatio = false }: ResizeOptions): string | null {
+  public resizeImage({ width, height, maintainAspectRatio = false }: ResizeOptions) {
     if (!this.selectedImage) {
+      return null;
+    }
+
+    if (this._isLoading) {
+      console.warn('Image is still loading. Please wait.');
       return null;
     }
 
@@ -68,6 +79,10 @@ export class ImageProcessor {
 
     this.selectedImage = resizedImg;
     return resizedImg.src;
+  }
+
+  get isLoading(): boolean {
+    return this._isLoading;
   }
 
   private _selectImageFile(): Promise<File> {
@@ -99,11 +114,11 @@ export class ImageProcessor {
     });
   }
 
-  private isValidFileSize(file: File): boolean {
+  private isValidFileSize(file: File) {
     return this.maxFileSize ? file.size <= this.maxFileSize : true;
   }
 
-  private resizeImageIfNeeded(img: HTMLImageElement, options: ResizeOptions): HTMLImageElement {
+  private resizeImageIfNeeded(img: HTMLImageElement, options: ResizeOptions) {
     const { width: targetWidth, height: targetHeight, maintainAspectRatio = false } = options;
     let width = targetWidth || img.width;
     let height = targetHeight || img.height;
