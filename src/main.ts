@@ -1,7 +1,11 @@
 import './style.css';
 import { ImageProcessor } from './ImageProcessor';
 
-const imageProcessor = new ImageProcessor(5 * 1024 * 1024);
+const imageProcessor = new ImageProcessor({
+  maxFileSize: 5 * 1024 * 1024,
+  maxHeight: 500,
+  maxWidth: 500,
+});
 const selectButton = document.getElementById('selectImage') as HTMLButtonElement;
 const previewImg = document.getElementById('imagePreview') as HTMLImageElement;
 const resizeButton = document.getElementById('resize') as HTMLButtonElement;
@@ -22,7 +26,7 @@ selectButton.addEventListener('click', async () => {
 });
 
 resizeButton.addEventListener('click', () => {
-  const resizedImage = imageProcessor.resizeImage(500, 500);
+  const resizedImage = imageProcessor.resizeImage(300, 200);
   if (resizedImage) {
     previewImg.src = resizedImage;
   }

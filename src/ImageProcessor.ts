@@ -1,12 +1,26 @@
+export interface ImageProcessorOptions {
+  maxFileSize?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
 export class ImageProcessor {
   private selectedImage: HTMLImageElement | null = null;
   private maxFileSize: number | null = null;
+  private maxWidth: number | null = null;
+  private maxHeight: number | null = null;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D | null = null;
 
-  constructor(maxFileSize?: number) {
+  constructor({ maxFileSize, maxWidth, maxHeight }: ImageProcessorOptions) {
     if (maxFileSize) {
       this.maxFileSize = maxFileSize;
+    }
+    if (maxWidth) {
+      this.maxWidth = maxWidth;
+    }
+    if (maxHeight) {
+      this.maxHeight = maxHeight;
     }
 
     this.canvas = document.createElement('canvas');
@@ -31,10 +45,9 @@ export class ImageProcessor {
       return null;
     }
 
-    this.canvas.width = width;
-    this.canvas.height = height;
-    this.ctx?.drawImage(this.selectedImage, 0, 0, width, height);
-    return this.canvas.toDataURL('image/jpeg');
+    const resizedImg = this.resizeImageIfNeeded(this.selectedImage, width, height);
+    this.selectedImage = resizedImg;
+    return resizedImg.src;
   }
 
   private _selectImageFile(): Promise<File> {
@@ -55,7 +68,11 @@ export class ImageProcessor {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
-        img.onload = () => resolve(img);
+        img.onload = () => {
+          const resizedImage = this.resizeImageIfNeeded(img);
+          resolve(resizedImage);
+        };
+
         img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
@@ -64,5 +81,44 @@ export class ImageProcessor {
 
   private isValidFileSize(file: File): boolean {
     return this.maxFileSize ? file.size <= this.maxFileSize : true;
+  }
+
+  private resizeImageIfNeeded(
+    img: HTMLImageElement,
+    targetWidth?: number,
+    targetHeight?: number
+  ): HTMLImageElement {
+    let width = targetWidth || img.width;
+    let height = targetHeight || img.height;
+    const aspectRatio = img.width / img.height;
+
+    if (targetWidth && targetHeight) {
+      if (width / height > aspectRatio) {
+        width = height * aspectRatio;
+      } else {
+        height = width / aspectRatio;
+      }
+    }
+
+    if (this.maxWidth && width > this.maxWidth) {
+      width = this.maxWidth;
+      height = width / aspectRatio;
+    }
+    if (this.maxHeight && height > this.maxHeight) {
+      height = this.maxHeight;
+      width = height * aspectRatio;
+    }
+
+    if (width !== img.width || height !== img.height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.ctx?.drawImage(img, 0, 0, width, height);
+
+      const resizedImg = new Image();
+      resizedImg.src = this.canvas.toDataURL('image/jpeg');
+      return resizedImg;
+    }
+
+    return img;
   }
 }
