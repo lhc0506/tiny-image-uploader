@@ -26,7 +26,10 @@ selectButton.addEventListener('click', async () => {
 });
 
 resizeButton.addEventListener('click', () => {
-  const resizedImage = imageProcessor.resizeImage(300, 200);
+  const resizedImage = imageProcessor.resizeImage({
+    width: 300,
+    height: 100,
+  });
   if (resizedImage) {
     previewImg.src = resizedImage;
   }

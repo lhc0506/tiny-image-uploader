@@ -4,6 +4,12 @@ export interface ImageProcessorOptions {
   maxHeight?: number;
 }
 
+interface ResizeOptions {
+  width?: number;
+  height?: number;
+  maintainAspectRatio?: boolean;
+}
+
 export class ImageProcessor {
   private selectedImage: HTMLImageElement | null = null;
   private maxFileSize: number | null = null;
@@ -40,12 +46,26 @@ export class ImageProcessor {
     return this.selectedImage?.src || null;
   }
 
-  public resizeImage(width: number, height: number): string | null {
+  public resizeImage({ width, height, maintainAspectRatio = false }: ResizeOptions): string | null {
     if (!this.selectedImage) {
       return null;
     }
 
-    const resizedImg = this.resizeImageIfNeeded(this.selectedImage, width, height);
+    if (width === undefined && height === undefined) {
+      throw new Error('At least one of width or height must be provided');
+    }
+
+    const currentWidth = this.selectedImage.width;
+    const currentHeight = this.selectedImage.height;
+    const targetWidth = width !== undefined ? width : currentWidth;
+    const targetHeight = height !== undefined ? height : currentHeight;
+
+    const resizedImg = this.resizeImageIfNeeded(this.selectedImage, {
+      width: targetWidth,
+      height: targetHeight,
+      maintainAspectRatio,
+    });
+
     this.selectedImage = resizedImg;
     return resizedImg.src;
   }
@@ -69,7 +89,7 @@ export class ImageProcessor {
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          const resizedImage = this.resizeImageIfNeeded(img);
+          const resizedImage = this.resizeImageIfNeeded(img, { maintainAspectRatio: true });
           resolve(resizedImage);
         };
 
@@ -83,33 +103,34 @@ export class ImageProcessor {
     return this.maxFileSize ? file.size <= this.maxFileSize : true;
   }
 
-  private resizeImageIfNeeded(
-    img: HTMLImageElement,
-    targetWidth?: number,
-    targetHeight?: number
-  ): HTMLImageElement {
+  private resizeImageIfNeeded(img: HTMLImageElement, options: ResizeOptions): HTMLImageElement {
+    const { width: targetWidth, height: targetHeight, maintainAspectRatio = false } = options;
     let width = targetWidth || img.width;
     let height = targetHeight || img.height;
     const aspectRatio = img.width / img.height;
 
-    if (targetWidth && targetHeight) {
-      if (width / height > aspectRatio) {
-        width = height * aspectRatio;
-      } else {
-        height = width / aspectRatio;
+    if (maintainAspectRatio) {
+      if (targetWidth && targetHeight) {
+        const ratio = Math.min(targetWidth / img.width, targetHeight / img.height);
+        width = img.width * ratio;
+        height = img.height * ratio;
+      } else if (targetWidth) {
+        height = targetWidth / aspectRatio;
+      } else if (targetHeight) {
+        width = targetHeight * aspectRatio;
       }
     }
 
     if (this.maxWidth && width > this.maxWidth) {
       width = this.maxWidth;
-      height = width / aspectRatio;
+      height = maintainAspectRatio ? width / aspectRatio : height;
     }
     if (this.maxHeight && height > this.maxHeight) {
       height = this.maxHeight;
-      width = height * aspectRatio;
+      width = maintainAspectRatio ? height * aspectRatio : width;
     }
 
-    if (width !== img.width || height !== img.height) {
+    if (Math.abs(width - img.width) > 1 || Math.abs(height - img.height) > 1) {
       this.canvas.width = width;
       this.canvas.height = height;
       this.ctx?.drawImage(img, 0, 0, width, height);
