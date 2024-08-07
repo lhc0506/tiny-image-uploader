@@ -12,6 +12,7 @@ interface ResizeOptions {
 
 export class ImageProcessor {
   private selectedImage: HTMLImageElement | null = null;
+  private originalMimeType: string | null = null;
   private _isLoading = false;
   private maxFileSize: number | null = null;
   private maxWidth: number | null = null;
@@ -104,6 +105,7 @@ export class ImageProcessor {
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
+          this.originalMimeType = file.type;
           const resizedImage = this.resizeImageIfNeeded(img, { maintainAspectRatio: true });
           resolve(resizedImage);
         };
@@ -146,15 +148,46 @@ export class ImageProcessor {
     }
 
     if (Math.abs(width - img.width) > 1 || Math.abs(height - img.height) > 1) {
-      this.canvas.width = width;
-      this.canvas.height = height;
-      this.ctx?.drawImage(img, 0, 0, width, height);
-
-      const resizedImg = new Image();
-      resizedImg.src = this.canvas.toDataURL('image/jpeg');
-      return resizedImg;
+      return this.stepDownImage(img, width, height);
     }
 
     return img;
+  }
+
+  private stepDownImage(
+    img: HTMLImageElement,
+    targetWidth: number,
+    targetHeight: number
+  ): HTMLImageElement {
+    let currentWidth = img.width;
+    let currentHeight = img.height;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = currentWidth;
+    canvas.height = currentHeight;
+    ctx?.drawImage(img, 0, 0, currentWidth, currentHeight);
+
+    while (currentWidth > targetWidth || currentHeight > targetHeight) {
+      currentWidth = Math.max(Math.floor(currentWidth / 2), targetWidth);
+      currentHeight = Math.max(Math.floor(currentHeight / 2), targetHeight);
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = currentWidth;
+      tempCanvas.height = currentHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      tempCtx?.drawImage(canvas, 0, 0, currentWidth, currentHeight);
+
+      canvas.width = currentWidth;
+      canvas.height = currentHeight;
+      ctx?.drawImage(tempCanvas, 0, 0);
+    }
+
+    ctx?.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+
+    const result = new Image();
+    result.src = canvas.toDataURL(this.originalMimeType || 'image/jpeg');
+    return result;
   }
 }
