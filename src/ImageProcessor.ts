@@ -169,8 +169,17 @@ export class ImageProcessor {
     ctx?.drawImage(img, 0, 0, currentWidth, currentHeight);
 
     while (currentWidth > targetWidth || currentHeight > targetHeight) {
-      currentWidth = Math.max(Math.floor(currentWidth / 2), targetWidth);
-      currentHeight = Math.max(Math.floor(currentHeight / 2), targetHeight);
+      const ratioWidth = currentWidth / targetWidth;
+      const ratioHeight = currentHeight / targetHeight;
+      const ratio = Math.max(ratioWidth, ratioHeight);
+
+      if (ratio <= 2) {
+        currentWidth = targetWidth;
+        currentHeight = targetHeight;
+      } else {
+        currentWidth = Math.max(Math.floor(currentWidth / 2), targetWidth);
+        currentHeight = Math.max(Math.floor(currentHeight / 2), targetHeight);
+      }
 
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = currentWidth;
@@ -183,8 +192,6 @@ export class ImageProcessor {
       canvas.height = currentHeight;
       ctx?.drawImage(tempCanvas, 0, 0);
     }
-
-    ctx?.drawImage(canvas, 0, 0, targetWidth, targetHeight);
 
     const result = new Image();
     result.src = canvas.toDataURL(this.originalMimeType || 'image/jpeg');
