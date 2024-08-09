@@ -17,8 +17,6 @@ export class ImageProcessor {
   private maxFileSize: number | null = null;
   private maxWidth: number | null = null;
   private maxHeight: number | null = null;
-  private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D | null = null;
 
   constructor({ maxFileSize, maxWidth, maxHeight }: ImageProcessorOptions) {
     if (maxFileSize) {
@@ -30,9 +28,6 @@ export class ImageProcessor {
     if (maxHeight) {
       this.maxHeight = maxHeight;
     }
-
-    this.canvas = document.createElement('canvas');
-    this.ctx = this.canvas.getContext('2d');
   }
 
   public async selectImage(): Promise<void> {
