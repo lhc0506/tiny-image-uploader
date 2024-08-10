@@ -1,6 +1,6 @@
 {
   "name": "tiny-image-uploader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A lightweight library for image uploading and processing",
   "type": "module",
   "main": "dist/tiny-image-uploader.umd.js",
@@ -27,6 +27,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/tiny-image-uploader.git"
+    "url": "https://github.com/lhc0506/tiny-image-uploader.git"
   }
 }
