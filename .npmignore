@@ -1,0 +1,10 @@
+src/
+public/
+index.html
+vite.config.ts
+tsconfig.json
+biome.json
+.github/
+*.log
+*.tsbuildinfo
+

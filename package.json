@@ -1,19 +1,32 @@
 {
   "name": "tiny-image-uploader",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "A lightweight library for image uploading and processing",
   "type": "module",
-  "scripts": {
+  "main": "dist/tiny-image-uploader.umd.js",
+  "module": "dist/tiny-image-uploader.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+ "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "build": "vite build && tsc --emitDeclarationOnly",
     "lint": "biome lint ./src",
     "format": "biome format ./src --write",
-    "check": "biome check ./src --apply"
+    "check": "biome check ./src --apply",
+    "prepublishOnly": "npm run lint && npm run build"
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.3",
     "typescript": "^5.2.2",
     "vite": "^5.3.4"
+  },
+  "keywords": ["image", "upload", "processing"],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/tiny-image-uploader.git"
   }
 }
