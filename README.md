@@ -7,8 +7,9 @@
 - Image resizing (with aspect ratio preservation option)
 - Maximum file size limitation
 - Maximum width and height constraints
+- [x] Image Cropping
+- [x] Image Restoration
 - [ ] Automatic Image Compression
-- [ ] Image Cropping
 - [ ] Image type changing
 <!--
 TODO: 향후 배포 시 추가

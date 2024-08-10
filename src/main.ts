@@ -10,6 +10,7 @@ const selectButton = document.getElementById('selectImage') as HTMLButtonElement
 const previewImg = document.getElementById('imagePreview') as HTMLImageElement;
 const resizeButton = document.getElementById('resize') as HTMLButtonElement;
 const cropButton = document.getElementById('crop') as HTMLButtonElement;
+const restoreButton = document.getElementById('restore') as HTMLButtonElement;
 
 selectButton.addEventListener('click', async () => {
   try {
@@ -45,5 +46,12 @@ cropButton.addEventListener('click', () => {
   });
   if (croppedImage) {
     previewImg.src = croppedImage;
+  }
+});
+
+restoreButton.addEventListener('click', () => {
+  const restoredImage = imageProcessor.restoreOriginalImage();
+  if (restoredImage) {
+    previewImg.src = restoredImage;
   }
 });

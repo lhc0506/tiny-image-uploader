@@ -18,6 +18,7 @@ interface CropOptions {
 }
 
 export class ImageProcessor {
+  private originalImage: HTMLImageElement | null = null;
   private selectedImage: HTMLImageElement | null = null;
   private originalMimeType: string | null = null;
   private _isLoading = false;
@@ -45,6 +46,8 @@ export class ImageProcessor {
       const file = await this._selectImageFile();
       if (this.isValidFileSize(file)) {
         this.selectedImage = await this.loadImage(file);
+        this.originalImage = this.cloneImage(this.selectedImage);
+
         this.resetCanvas();
       } else {
         throw new Error('File size exceeds the maximum limit');
@@ -116,6 +119,26 @@ export class ImageProcessor {
     this.resetCanvas();
 
     return croppedImage.src;
+  }
+
+  public restoreOriginalImage(): string | null {
+    if (!this.originalImage) {
+      console.warn('No original image available to restore');
+      return null;
+    }
+    this.selectedImage = this.cloneImage(this.originalImage);
+    this.resetCanvas();
+    return this.selectedImage.src;
+  }
+
+  public hasOriginalImage(): boolean {
+    return this.originalImage !== null;
+  }
+
+  private cloneImage(img: HTMLImageElement): HTMLImageElement {
+    const clone = new Image();
+    clone.src = img.src;
+    return clone;
   }
 
   get isLoading(): boolean {
