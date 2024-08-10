@@ -1,5 +1,4 @@
-import './style.css';
-import { ImageProcessor } from './ImageProcessor';
+import { ImageProcessor } from './lib/ImageProcessor';
 
 const imageProcessor = new ImageProcessor({
   maxFileSize: 5 * 1024 * 1024,
