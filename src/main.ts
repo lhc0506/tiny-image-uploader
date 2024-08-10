@@ -27,8 +27,8 @@ selectButton.addEventListener('click', async () => {
   }
 });
 
-resizeButton.addEventListener('click', () => {
-  const resizedImage = imageProcessor.resizeImage({
+resizeButton.addEventListener('click', async () => {
+  const resizedImage = await imageProcessor.resizeImage({
     width: 300,
     height: 100,
   });
@@ -37,8 +37,8 @@ resizeButton.addEventListener('click', () => {
   }
 });
 
-cropButton.addEventListener('click', () => {
-  const croppedImage = imageProcessor.cropImage({
+cropButton.addEventListener('click', async () => {
+  const croppedImage = await imageProcessor.cropImage({
     top: 20,
     width: 100,
     left: 50,
@@ -49,8 +49,8 @@ cropButton.addEventListener('click', () => {
   }
 });
 
-restoreButton.addEventListener('click', () => {
-  const restoredImage = imageProcessor.restoreOriginalImage();
+restoreButton.addEventListener('click', async () => {
+  const restoredImage = await imageProcessor.restoreOriginalImage();
   if (restoredImage) {
     previewImg.src = restoredImage;
   }

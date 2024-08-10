@@ -1,4 +1,4 @@
-export interface ImageProcessorOptions {
+interface ImageProcessorOptions {
   maxFileSize?: number;
   maxWidth?: number;
   maxHeight?: number;
@@ -46,7 +46,7 @@ export class ImageProcessor {
       const file = await this._selectImageFile();
       if (this.isValidFileSize(file)) {
         this.selectedImage = await this.loadImage(file);
-        this.originalImage = this.cloneImage(this.selectedImage);
+        this.originalImage = await this.cloneImage(this.selectedImage);
 
         this.resetCanvas();
       } else {
@@ -61,7 +61,11 @@ export class ImageProcessor {
     return this.selectedImage?.src || null;
   }
 
-  public resizeImage({ width, height, maintainAspectRatio = false }: ResizeOptions) {
+  public async resizeImage({
+    width,
+    height,
+    maintainAspectRatio = false,
+  }: ResizeOptions): Promise<string | null> {
     if (!this.selectedImage) {
       return null;
     }
@@ -80,18 +84,18 @@ export class ImageProcessor {
     const targetWidth = width !== undefined ? width : currentWidth;
     const targetHeight = height !== undefined ? height : currentHeight;
 
-    const resizedImg = this.resizeImageIfNeeded(this.selectedImage, {
+    const resizedImg = await this.resizeImageIfNeeded(this.selectedImage, {
       width: targetWidth,
       height: targetHeight,
       maintainAspectRatio,
     });
 
     this.selectedImage = resizedImg;
-    this.resetCanvas();
+    await this.resetCanvas();
     return resizedImg.src;
   }
 
-  public cropImage({ top, left, width, height }: CropOptions): string {
+  public async cropImage({ top, left, width, height }: CropOptions): Promise<string> {
     if (!this.selectedImage) {
       throw new Error('No image selected');
     }
@@ -100,7 +104,7 @@ export class ImageProcessor {
       throw new Error('Image is still loading. Please wait.');
     }
 
-    this.resetCanvas();
+    await this.resetCanvas();
 
     const cropWidth = Math.min(width, this.selectedImage.width - left);
     const cropHeight = Math.min(height, this.selectedImage.height - top);
@@ -111,41 +115,32 @@ export class ImageProcessor {
     this.canvas.height = cropHeight;
     this.ctx.putImageData(imageData, 0, 0);
 
-    const croppedImage = new Image();
-    croppedImage.src = this.canvas.toDataURL(this.originalMimeType || 'image/jpeg');
+    const croppedImage = await this.createImage(
+      this.canvas.toDataURL(this.originalMimeType || 'image/jpeg')
+    );
 
     this.selectedImage = croppedImage;
 
-    this.resetCanvas();
+    await this.resetCanvas();
 
     return croppedImage.src;
   }
 
-  public restoreOriginalImage(): string | null {
+  public async restoreOriginalImage(): Promise<string | null> {
     if (!this.originalImage) {
       console.warn('No original image available to restore');
       return null;
     }
-    this.selectedImage = this.cloneImage(this.originalImage);
-    this.resetCanvas();
+    this.selectedImage = await this.cloneImage(this.originalImage);
+    await this.resetCanvas();
     return this.selectedImage.src;
-  }
-
-  public hasOriginalImage(): boolean {
-    return this.originalImage !== null;
-  }
-
-  private cloneImage(img: HTMLImageElement): HTMLImageElement {
-    const clone = new Image();
-    clone.src = img.src;
-    return clone;
   }
 
   get isLoading(): boolean {
     return this._isLoading;
   }
 
-  private _selectImageFile(): Promise<File> {
+  private async _selectImageFile(): Promise<File> {
     return new Promise((resolve) => {
       const input = document.createElement('input');
       input.type = 'file';
@@ -158,18 +153,14 @@ export class ImageProcessor {
     });
   }
 
-  private loadImage(file: File): Promise<HTMLImageElement> {
+  private async loadImage(file: File): Promise<HTMLImageElement> {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          this.originalMimeType = file.type;
-          const resizedImage = this.resizeImageIfNeeded(img, { maintainAspectRatio: true });
-          resolve(resizedImage);
-        };
-
-        img.src = e.target?.result as string;
+      reader.onload = async (e) => {
+        const img = await this.createImage(e.target?.result as string);
+        this.originalMimeType = file.type;
+        const resizedImage = await this.resizeImageIfNeeded(img, { maintainAspectRatio: true });
+        resolve(resizedImage);
       };
       reader.readAsDataURL(file);
     });
@@ -213,51 +204,67 @@ export class ImageProcessor {
     return img;
   }
 
-  private stepDownImage(
+  private async stepDownImage(
     img: HTMLImageElement,
     targetWidth: number,
     targetHeight: number
-  ): HTMLImageElement {
-    let currentWidth = img.width;
-    let currentHeight = img.height;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+  ): Promise<HTMLImageElement> {
+    return new Promise((resolve) => {
+      let currentWidth = img.width;
+      let currentHeight = img.height;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
 
-    canvas.width = currentWidth;
-    canvas.height = currentHeight;
-    ctx?.drawImage(img, 0, 0, currentWidth, currentHeight);
-
-    while (currentWidth > targetWidth || currentHeight > targetHeight) {
-      const ratioWidth = currentWidth / targetWidth;
-      const ratioHeight = currentHeight / targetHeight;
-      const ratio = Math.max(ratioWidth, ratioHeight);
-
-      if (ratio <= 2) {
-        currentWidth = targetWidth;
-        currentHeight = targetHeight;
-      } else {
-        currentWidth = Math.max(Math.floor(currentWidth / 2), targetWidth);
-        currentHeight = Math.max(Math.floor(currentHeight / 2), targetHeight);
+      if (!ctx) {
+        throw new Error('Unable to get 2D context for canvas');
       }
-
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = currentWidth;
-      tempCanvas.height = currentHeight;
-      const tempCtx = tempCanvas.getContext('2d');
-
-      tempCtx?.drawImage(canvas, 0, 0, currentWidth, currentHeight);
 
       canvas.width = currentWidth;
       canvas.height = currentHeight;
-      ctx?.drawImage(tempCanvas, 0, 0);
-    }
+      ctx.drawImage(img, 0, 0, currentWidth, currentHeight);
 
-    const result = new Image();
-    result.src = canvas.toDataURL(this.originalMimeType || 'image/jpeg');
-    return result;
+      const step = () => {
+        const ratioWidth = currentWidth / targetWidth;
+        const ratioHeight = currentHeight / targetHeight;
+        const ratio = Math.max(ratioWidth, ratioHeight);
+
+        if (ratio <= 2) {
+          currentWidth = targetWidth;
+          currentHeight = targetHeight;
+        } else {
+          currentWidth = Math.max(Math.floor(currentWidth / 2), targetWidth);
+          currentHeight = Math.max(Math.floor(currentHeight / 2), targetHeight);
+        }
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = currentWidth;
+        tempCanvas.height = currentHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        if (!tempCtx) {
+          throw new Error('Unable to get 2D context for temporary canvas');
+        }
+
+        tempCtx.drawImage(canvas, 0, 0, currentWidth, currentHeight);
+
+        canvas.width = currentWidth;
+        canvas.height = currentHeight;
+        ctx.drawImage(tempCanvas, 0, 0);
+
+        if (currentWidth === targetWidth && currentHeight === targetHeight) {
+          const result = new Image();
+          result.onload = () => resolve(result);
+          result.src = canvas.toDataURL(this.originalMimeType || 'image/jpeg');
+        } else {
+          requestAnimationFrame(step);
+        }
+      };
+
+      requestAnimationFrame(step);
+    });
   }
 
-  private resetCanvas() {
+  private async resetCanvas(): Promise<void> {
     if (this.selectedImage) {
       this.canvas.width = this.selectedImage.width;
       this.canvas.height = this.selectedImage.height;
@@ -269,5 +276,18 @@ export class ImageProcessor {
         this.selectedImage.height
       );
     }
+  }
+
+  private async cloneImage(img: HTMLImageElement): Promise<HTMLImageElement> {
+    return this.createImage(img.src);
+  }
+
+  private createImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
   }
 }
