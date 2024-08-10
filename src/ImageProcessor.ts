@@ -1,23 +1,4 @@
-interface ImageProcessorOptions {
-  maxFileSize?: number;
-  maxWidth?: number;
-  maxHeight?: number;
-}
-
-interface ResizeOptions {
-  width?: number;
-  height?: number;
-  maintainAspectRatio?: boolean;
-}
-
-interface CropOptions {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-type UploadFunction = (blob: Blob, fileName: string) => Promise<string>;
+import type { CropOptions, ImageProcessorOptions, ResizeOptions, UploadFunction } from './types';
 
 export class ImageProcessor {
   private originalImage: HTMLImageElement | null = null;
