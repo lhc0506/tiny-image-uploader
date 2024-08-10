@@ -28,15 +28,9 @@ export class ImageProcessor {
   private ctx: CanvasRenderingContext2D;
 
   constructor({ maxFileSize, maxWidth, maxHeight }: ImageProcessorOptions) {
-    if (maxFileSize) {
-      this.maxFileSize = maxFileSize;
-    }
-    if (maxWidth) {
-      this.maxWidth = maxWidth;
-    }
-    if (maxHeight) {
-      this.maxHeight = maxHeight;
-    }
+    this.maxFileSize = maxFileSize || null;
+    this.maxWidth = maxWidth || null;
+    this.maxHeight = maxHeight || null;
     this.canvas = document.createElement('canvas');
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
@@ -103,6 +97,8 @@ export class ImageProcessor {
       throw new Error('Image is still loading. Please wait.');
     }
 
+    this.resetCanvas();
+
     const cropWidth = Math.min(width, this.selectedImage.width - left);
     const cropHeight = Math.min(height, this.selectedImage.height - top);
 
@@ -116,6 +112,8 @@ export class ImageProcessor {
     croppedImage.src = this.canvas.toDataURL(this.originalMimeType || 'image/jpeg');
 
     this.selectedImage = croppedImage;
+
+    this.resetCanvas();
 
     return croppedImage.src;
   }
