@@ -9,6 +9,7 @@ const imageProcessor = new ImageProcessor({
 const selectButton = document.getElementById('selectImage') as HTMLButtonElement;
 const previewImg = document.getElementById('imagePreview') as HTMLImageElement;
 const resizeButton = document.getElementById('resize') as HTMLButtonElement;
+const cropButton = document.getElementById('crop') as HTMLButtonElement;
 
 selectButton.addEventListener('click', async () => {
   try {
@@ -32,5 +33,17 @@ resizeButton.addEventListener('click', () => {
   });
   if (resizedImage) {
     previewImg.src = resizedImage;
+  }
+});
+
+cropButton.addEventListener('click', () => {
+  const croppedImage = imageProcessor.cropImage({
+    top: 20,
+    width: 100,
+    left: 50,
+    height: 100,
+  });
+  if (croppedImage) {
+    previewImg.src = croppedImage;
   }
 });

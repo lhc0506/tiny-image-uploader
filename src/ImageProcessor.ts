@@ -10,6 +10,13 @@ interface ResizeOptions {
   maintainAspectRatio?: boolean;
 }
 
+interface CropOptions {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 export class ImageProcessor {
   private selectedImage: HTMLImageElement | null = null;
   private originalMimeType: string | null = null;
@@ -17,6 +24,8 @@ export class ImageProcessor {
   private maxFileSize: number | null = null;
   private maxWidth: number | null = null;
   private maxHeight: number | null = null;
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
 
   constructor({ maxFileSize, maxWidth, maxHeight }: ImageProcessorOptions) {
     if (maxFileSize) {
@@ -28,6 +37,12 @@ export class ImageProcessor {
     if (maxHeight) {
       this.maxHeight = maxHeight;
     }
+    this.canvas = document.createElement('canvas');
+    const ctx = this.canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Canvas context is not supported');
+    }
+    this.ctx = ctx;
   }
 
   public async selectImage(): Promise<void> {
@@ -36,6 +51,7 @@ export class ImageProcessor {
       const file = await this._selectImageFile();
       if (this.isValidFileSize(file)) {
         this.selectedImage = await this.loadImage(file);
+        this.resetCanvas();
       } else {
         throw new Error('File size exceeds the maximum limit');
       }
@@ -74,7 +90,34 @@ export class ImageProcessor {
     });
 
     this.selectedImage = resizedImg;
+    this.resetCanvas();
     return resizedImg.src;
+  }
+
+  public cropImage({ top, left, width, height }: CropOptions): string {
+    if (!this.selectedImage) {
+      throw new Error('No image selected');
+    }
+
+    if (this._isLoading) {
+      throw new Error('Image is still loading. Please wait.');
+    }
+
+    const cropWidth = Math.min(width, this.selectedImage.width - left);
+    const cropHeight = Math.min(height, this.selectedImage.height - top);
+
+    const imageData = this.ctx.getImageData(left, top, cropWidth, cropHeight);
+
+    this.canvas.width = cropWidth;
+    this.canvas.height = cropHeight;
+    this.ctx.putImageData(imageData, 0, 0);
+
+    const croppedImage = new Image();
+    croppedImage.src = this.canvas.toDataURL(this.originalMimeType || 'image/jpeg');
+
+    this.selectedImage = croppedImage;
+
+    return croppedImage.src;
   }
 
   get isLoading(): boolean {
@@ -191,5 +234,19 @@ export class ImageProcessor {
     const result = new Image();
     result.src = canvas.toDataURL(this.originalMimeType || 'image/jpeg');
     return result;
+  }
+
+  private resetCanvas() {
+    if (this.selectedImage) {
+      this.canvas.width = this.selectedImage.width;
+      this.canvas.height = this.selectedImage.height;
+      this.ctx.drawImage(
+        this.selectedImage,
+        0,
+        0,
+        this.selectedImage.width,
+        this.selectedImage.height
+      );
+    }
   }
 }
