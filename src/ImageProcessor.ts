@@ -17,6 +17,8 @@ interface CropOptions {
   height: number;
 }
 
+type UploadFunction = (blob: Blob, fileName: string) => Promise<string>;
+
 export class ImageProcessor {
   private originalImage: HTMLImageElement | null = null;
   private selectedImage: HTMLImageElement | null = null;
@@ -134,6 +136,32 @@ export class ImageProcessor {
     this.selectedImage = await this.cloneImage(this.originalImage);
     await this.resetCanvas();
     return this.selectedImage.src;
+  }
+
+  public async uploadImage(uploadFunction: UploadFunction): Promise<string> {
+    if (!this.selectedImage) {
+      throw new Error('No image selected for upload');
+    }
+
+    const blob = await this.imageToBlob(this.selectedImage);
+    const fileName = `image.${this.originalMimeType?.split('/')[1] || 'jpg'}`;
+
+    return uploadFunction(blob, fileName);
+  }
+
+  private async imageToBlob(img: HTMLImageElement): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      this.canvas.width = img.width;
+      this.canvas.height = img.height;
+      this.ctx.drawImage(img, 0, 0);
+      this.canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Failed to create blob from image'));
+        }
+      }, this.originalMimeType || 'image/jpeg');
+    });
   }
 
   get isLoading(): boolean {
